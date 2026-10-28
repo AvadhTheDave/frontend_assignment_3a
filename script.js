@@ -1,31 +1,10 @@
 let display = document.getElementById('display');
-let pendingOperator = null;
-let waitingForOperand = false;
-
-function operate(firstNum, operator, secondNum) {
-    let result;
-    switch (operator) {
-        case '+':
-            result = firstNum + secondNum;
-            break;
-        case '-':
-            result = firstNum - secondNum;
-            break;
-        case '*':
-            result = firstNum * secondNum;
-            break;
-        case '/':
-            result = firstNum / secondNum;
-            break;
-        default:
-            throw new Error('Invalid operator');
-    }
-    return result;
-}
 
 function handleButtonClick(event) {
     const button = event.currentTarget;
     const value = button.dataset.value;
+
+    let operators = ['+', '-', '*', '/'];
 
     if (!value) {
         return;
@@ -33,53 +12,47 @@ function handleButtonClick(event) {
 
     if (value === 'clear') {
         display.textContent = '0';
-        pendingOperator = null;
-        waitingForOperand = false;
         return;
     }
 
     if (value === 'backspace') {
-        if (waitingForOperand) {
+        if (display.textContent === "NaN") {
+            display.textContent = '0';
             return;
+        } else {
+            display.textContent = display.textContent.slice(0, -1) || '0';
         }
-
-        display.textContent = display.textContent.slice(0, -1) || '0';
         return;
     }
 
-    if (['+', '-', '*', '/'].includes(value)) {
-        if (pendingOperator && !waitingForOperand) {
-            display.textContent = String(
-                operate(Number(display.textContent), pendingOperator, Number(value))
-            );
+    if (operators.includes(value)) {
+        if (operators.includes(display.textContent[display.textContent.length - 1])) {
+            display.textContent += "";
+        } else {
+            display.textContent += value;
         }
-
-        pendingOperator = value;
-        waitingForOperand = true;
         return;
     }
 
     if (value === '=') {
-        if (pendingOperator && !waitingForOperand) {
-            display.textContent = String(
-                operate(Number(display.textContent), pendingOperator, Number(display.textContent))
-            );
-            pendingOperator = null;
-            waitingForOperand = true;
+        if (display.textContent.includes('/0')) {
+            display.textContent = 'NaN';
+        } else {
+            display.textContent = String(eval(display.textContent));
         }
         return;
     }
 
     if (/^\d$/.test(value)) {
-        if (waitingForOperand) {
+        if (display.textContent === "NaN") {
+            display.textContent = '0';
+            return;
+        } else if (display.textContent === '0') {
             display.textContent = value;
-            waitingForOperand = false;
         } else {
-            display.textContent =
-                display.textContent === '0'
-                    ? value
-                    : display.textContent + value;
+            display.textContent += value;
         }
+        return;
     }
 }
 
