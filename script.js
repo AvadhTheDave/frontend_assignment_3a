@@ -1,85 +1,91 @@
-let display = document.getElementById('display');
-let pendingOperator = null;
-let waitingForOperand = false;
-
-function operate(firstNum, operator, secondNum) {
-    let result;
-    switch (operator) {
-        case '+':
-            result = firstNum + secondNum;
-            break;
-        case '-':
-            result = firstNum - secondNum;
-            break;
-        case '*':
-            result = firstNum * secondNum;
-            break;
-        case '/':
-            result = firstNum / secondNum;
-            break;
-        default:
-            throw new Error('Invalid operator');
+class Result {
+    constructor(ok, value, message) {
+        this.ok = ok;
+        this.value = value;
+        this.message = message;
     }
-    return result;
+
+    static ok(value) {
+        return new Result(true, value, null);
+    }
+
+    static err(message) {
+        return new Result(false, null, message);
+    }
 }
 
-function handleButtonClick(event) {
-    const button = event.currentTarget;
-    const value = button.dataset.value;
+const display = document.getElementById('display');
+const operators = ['+', '-', '*', '/'];
 
-    if (!value) {
-        return;
+function evaluate(equasion) {
+    const tokens = equasion.match(/^-?\d+(?:\.\d+)?|\d+(?:\.\d+)?|[+\-*/]/g);
+    let result = Number(tokens[0]);
+    let i = 1;
+
+    while (i < tokens.length) {
+        const op = tokens[i];
+        const next = Number(tokens[i + 1]);
+        const prev = result;
+
+        switch (op) {
+            case '+': result = prev + next; break;
+            case '-': result = prev - next; break;
+            case '*': result = prev * next; break;
+            case '/': {
+                if (next === 0) return Result.err("Zero division");
+                result = prev / next; break;
+            }
+        }
+
+        console.log(`${prev} ${op} ${next} = ${result}`);
+
+        i += 2;
     }
 
+    return Result.ok(result);
+}
+
+function input(text, value) {
+    const last = text[text.length - 1];
+
     if (value === 'clear') {
-        display.textContent = '0';
-        pendingOperator = null;
-        waitingForOperand = false;
-        return;
+        return Result.ok('0');
     }
 
     if (value === 'backspace') {
-        if (waitingForOperand) {
-            return;
-        }
-
-        display.textContent = display.textContent.slice(0, -1) || '0';
-        return;
+        const newText = text.slice(0, -1);
+        return Result.ok(newText === '' || newText === '-' ? '0' : newText);
     }
 
-    if (['+', '-', '*', '/'].includes(value)) {
-        if (pendingOperator && !waitingForOperand) {
-            display.textContent = String(
-                operate(Number(display.textContent), pendingOperator, Number(value))
-            );
+    if (operators.includes(value)) {
+        if (operators.includes(last)) {
+            return Result.ok(text.slice(0, -1) + value);
         }
-
-        pendingOperator = value;
-        waitingForOperand = true;
-        return;
+        return Result.ok(text + value);
     }
 
     if (value === '=') {
-        if (pendingOperator && !waitingForOperand) {
-            display.textContent = String(
-                operate(Number(display.textContent), pendingOperator, Number(display.textContent))
-            );
-            pendingOperator = null;
-            waitingForOperand = true;
-        }
-        return;
+        if (operators.includes(last)) return Result.err("Missing number");
+
+        const result = evaluate(text);
+        if (!result.ok) return result;
+
+        return Result.ok(String(Math.round(result.value * 1e10) / 1e10));
     }
 
-    if (/^\d$/.test(value)) {
-        if (waitingForOperand) {
-            display.textContent = value;
-            waitingForOperand = false;
-        } else {
-            display.textContent =
-                display.textContent === '0'
-                    ? value
-                    : display.textContent + value;
-        }
+    if (text === '0') return Result.ok(value);
+    return Result.ok(text + value);
+}
+
+function handleButtonClick(event) {
+    const value = event.currentTarget.dataset.value;
+    const result = input(display.textContent, value);
+
+    if (result.ok) {
+        display.textContent = result.value;
+    } else {
+        alert(result.message);
+        console.log(result.message);
     }
 }
 
