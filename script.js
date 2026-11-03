@@ -17,12 +17,12 @@ class Result {
 const display = document.getElementById('display');
 const operators = ['+', '-', '*', '/'];
 
-function evaluate(equasion) {
-    if (!/^-?\d+(?:\.\d*)?(?:[+\-*/]\d+(?:\.\d*)?)*$/.test(equasion)) {
+function evaluate(equation) {
+    if (!/^-?\d+(?:\.\d*)?(?:[+\-*/]\d+(?:\.\d*)?)*$/.test(equation)) {
         return Result.err("Invalid expression");
     }
 
-    const tokens = equasion.match(/^-?\d+(?:\.\d*)?|[+\-*/]|\d+(?:\.\d*)?/g);
+    const tokens = equation.match(/^-?\d+(?:\.\d*)?|[+\-*/]|\d+(?:\.\d*)?/g);
     let result = Number(tokens[0]);
     let i = 1;
 
@@ -36,7 +36,7 @@ function evaluate(equasion) {
             case '-': result = prev - next; break;
             case '*': result = prev * next; break;
             case '/': {
-                if (next === 0) return Result.err("Zero division");
+                if (next === 0) return Result.err("Nice Try! Cannot divide by zero");
                 result = prev / next; break;
             }
         }
