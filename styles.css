@@ -86,8 +86,7 @@ main {
 }
 
 .buttons .clear,
-.buttons .backspace,
-.buttons .zero {
+.buttons .backspace {
     grid-column: span 2;
 }
 

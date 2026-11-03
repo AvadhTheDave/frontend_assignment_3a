@@ -18,7 +18,11 @@ const display = document.getElementById('display');
 const operators = ['+', '-', '*', '/'];
 
 function evaluate(equasion) {
-    const tokens = equasion.match(/^-?\d+(?:\.\d+)?|\d+(?:\.\d+)?|[+\-*/]/g);
+    if (!/^-?\d+(?:\.\d*)?(?:[+\-*/]\d+(?:\.\d*)?)*$/.test(equasion)) {
+        return Result.err("Invalid expression");
+    }
+
+    const tokens = equasion.match(/^-?\d+(?:\.\d*)?|[+\-*/]|\d+(?:\.\d*)?/g);
     let result = Number(tokens[0]);
     let i = 1;
 
@@ -64,13 +68,20 @@ function input(text, value) {
         return Result.ok(text + value);
     }
 
+    if (value === '.') {
+        const lastOperator = Math.max(...operators.map((operator) => text.lastIndexOf(operator)));
+        const currentNumber = text.slice(lastOperator + 1);
+        if (currentNumber.includes('.')) return Result.ok(text);
+        return Result.ok(text + (currentNumber === '' ? '0.' : '.'));
+    }
+
     if (value === '=') {
         if (operators.includes(last)) return Result.err("Missing number");
 
         const result = evaluate(text);
         if (!result.ok) return result;
 
-        return Result.ok(String(Math.round(result.value * 1e10) / 1e10));
+        return Result.ok(String(Math.round(result.value * 1e4) / 1e4));
     }
 
     if (text === '0') return Result.ok(value);
