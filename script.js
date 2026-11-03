@@ -65,7 +65,12 @@ function input(text, value) {
         if (operators.includes(last)) {
             return Result.ok(text.slice(0, -1) + value);
         }
-        return Result.ok(text + value);
+
+        const result = evaluate(text);
+        if (!result.ok) return result;
+
+        const intermediate = String(Math.round(result.value * 1e4) / 1e4);
+        return Result.ok(intermediate + value);
     }
 
     if (value === '.') {
