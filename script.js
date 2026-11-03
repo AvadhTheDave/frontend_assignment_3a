@@ -16,13 +16,39 @@ class Result {
 
 const display = document.getElementById('display');
 const operators = ['+', '-', '*', '/'];
+const displayMeasureContext = document.createElement('canvas').getContext('2d');
+
+function resizeDisplayText() {
+    if (!displayMeasureContext) {
+        throw new Error('Unable to measure calculator display text');
+    }
+
+    display.style.fontSize = '';
+    const style = getComputedStyle(display);
+    displayMeasureContext.font = style.font;
+    const availableWidth = display.clientWidth
+        - parseFloat(style.paddingLeft)
+        - parseFloat(style.paddingRight);
+    const textWidth = displayMeasureContext.measureText(display.textContent).width;
+    const baseFontSize = parseFloat(style.fontSize);
+
+    if (availableWidth > 0 && textWidth > availableWidth && textWidth > 0) {
+        display.style.fontSize = `${baseFontSize * availableWidth / textWidth}px`;
+    }
+}
+
+function formatResult(value) {
+    return String(Math.abs(value) < 1e12
+        ? Math.round(value * 1e4) / 1e4
+        : value);
+}
 
 function evaluate(equation) {
-    if (!/^-?\d+(?:\.\d*)?(?:[+\-*/]\d+(?:\.\d*)?)*$/.test(equation)) {
+    if (!/^-?\d+(?:\.\d*)?(?:e[+-]?\d+)?(?:[+\-*/]\d+(?:\.\d*)?(?:e[+-]?\d+)?)*$/i.test(equation)) {
         return Result.err("Invalid expression");
     }
 
-    const tokens = equation.match(/^-?\d+(?:\.\d*)?|[+\-*/]|\d+(?:\.\d*)?/g);
+    const tokens = equation.match(/^-?\d+(?:\.\d*)?(?:e[+-]?\d+)?|[+\-*/]|\d+(?:\.\d*)?(?:e[+-]?\d+)?/gi);
     let result = Number(tokens[0]);
     let i = 1;
 
@@ -40,6 +66,8 @@ function evaluate(equation) {
                 result = prev / next; break;
             }
         }
+
+        if (!Number.isFinite(result)) return Result.err("Result is too large");
 
         console.log(`${prev} ${op} ${next} = ${result}`);
 
@@ -69,8 +97,7 @@ function input(text, value) {
         const result = evaluate(text);
         if (!result.ok) return result;
 
-        const intermediate = String(Math.round(result.value * 1e4) / 1e4);
-        return Result.ok(intermediate + value);
+        return Result.ok(formatResult(result.value) + value);
     }
 
     if (value === '.') {
@@ -86,7 +113,7 @@ function input(text, value) {
         const result = evaluate(text);
         if (!result.ok) return result;
 
-        return Result.ok(String(Math.round(result.value * 1e4) / 1e4));
+        return Result.ok(formatResult(result.value));
     }
 
     if (text === '0') return Result.ok(value);
@@ -99,6 +126,7 @@ function handleButtonClick(event) {
 
     if (result.ok) {
         display.textContent = result.value;
+        resizeDisplayText();
     } else {
         alert(result.message);
         console.log(result.message);
@@ -108,3 +136,7 @@ function handleButtonClick(event) {
 document.querySelectorAll('.buttons button[data-value]').forEach((button) => {
     button.addEventListener('click', handleButtonClick);
 });
+
+window.addEventListener('resize', resizeDisplayText);
+document.fonts.ready.then(resizeDisplayText);
+resizeDisplayText();
