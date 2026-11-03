@@ -17,8 +17,12 @@ class Result {
 const display = document.getElementById('display');
 const operators = ['+', '-', '*', '/'];
 
-function evaluate(equasion) {
-    const tokens = equasion.match(/^-?\d+(?:\.\d+)?|\d+(?:\.\d+)?|[+\-*/]/g);
+function evaluate(equation) {
+    if (!/^-?\d+(?:\.\d*)?(?:[+\-*/]\d+(?:\.\d*)?)*$/.test(equation)) {
+        return Result.err("Invalid expression");
+    }
+
+    const tokens = equation.match(/^-?\d+(?:\.\d*)?|[+\-*/]|\d+(?:\.\d*)?/g);
     let result = Number(tokens[0]);
     let i = 1;
 
@@ -32,7 +36,7 @@ function evaluate(equasion) {
             case '-': result = prev - next; break;
             case '*': result = prev * next; break;
             case '/': {
-                if (next === 0) return Result.err("Zero division");
+                if (next === 0) return Result.err("Nice Try! Cannot divide by zero");
                 result = prev / next; break;
             }
         }
@@ -61,7 +65,19 @@ function input(text, value) {
         if (operators.includes(last)) {
             return Result.ok(text.slice(0, -1) + value);
         }
-        return Result.ok(text + value);
+
+        const result = evaluate(text);
+        if (!result.ok) return result;
+
+        const intermediate = String(Math.round(result.value * 1e4) / 1e4);
+        return Result.ok(intermediate + value);
+    }
+
+    if (value === '.') {
+        const lastOperator = Math.max(...operators.map((operator) => text.lastIndexOf(operator)));
+        const currentNumber = text.slice(lastOperator + 1);
+        if (currentNumber.includes('.')) return Result.ok(text);
+        return Result.ok(text + (currentNumber === '' ? '0.' : '.'));
     }
 
     if (value === '=') {
@@ -70,7 +86,7 @@ function input(text, value) {
         const result = evaluate(text);
         if (!result.ok) return result;
 
-        return Result.ok(String(Math.round(result.value * 1e10) / 1e10));
+        return Result.ok(String(Math.round(result.value * 1e4) / 1e4));
     }
 
     if (text === '0') return Result.ok(value);
