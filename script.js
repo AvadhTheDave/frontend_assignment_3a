@@ -108,7 +108,7 @@ function input(text, value) {
     }
 
     if (value === '=') {
-        if (operators.includes(last)) return Result.err("Missing number");
+        if (operators.includes(last)) return Result.err("Missing number, please complete the expression before evaluating.");
 
         const result = evaluate(text);
         if (!result.ok) return result;
@@ -128,7 +128,9 @@ function processInput(value) {
         resizeDisplayText();
     } else {
         alert(result.message);
-        console.log(result.message);
+        if (display.textContent.includes('/0')) {
+            display.textContent = '0';
+        }
     }
 }
 
