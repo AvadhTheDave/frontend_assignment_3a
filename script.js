@@ -108,7 +108,7 @@ function input(text, value) {
     }
 
     if (value === '=') {
-        if (operators.includes(last)) return Result.err("Missing number");
+        if (operators.includes(last)) return Result.err("Missing number, please complete the expression before evaluating.");
 
         const result = evaluate(text);
         if (!result.ok) return result;
@@ -120,8 +120,7 @@ function input(text, value) {
     return Result.ok(text + value);
 }
 
-function handleButtonClick(event) {
-    const value = event.currentTarget.dataset.value;
+function processInput(value) {
     const result = input(display.textContent, value);
 
     if (result.ok) {
@@ -129,14 +128,37 @@ function handleButtonClick(event) {
         resizeDisplayText();
     } else {
         alert(result.message);
-        console.log(result.message);
+        if (display.textContent.includes('/0')) {
+            display.textContent = '0';
+        }
     }
+}
+
+function handleButtonClick(event) {
+    const value = event.currentTarget.dataset.value;
+    processInput(value);
+}
+
+function handleKeyDown(event) {
+    if (event.key === 'Escape') return;
+
+    let value = event.key;
+    if (event.key === 'Enter') value = '=';
+    if (event.key === 'Backspace') value = 'backspace';
+
+    if (!/^[0-9.+\-*\/=]$/.test(value) && value !== 'backspace') return;
+
+    event.preventDefault();
+    processInput(value);
 }
 
 document.querySelectorAll('.buttons button[data-value]').forEach((button) => {
     button.addEventListener('click', handleButtonClick);
 });
 
+window.addEventListener('keydown', handleKeyDown);
 window.addEventListener('resize', resizeDisplayText);
 document.fonts.ready.then(resizeDisplayText);
 resizeDisplayText();
+
+
